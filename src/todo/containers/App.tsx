@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import { Status } from './todo/shared/status.type';
-import { Todo } from './todo/shared/todo.model';
-import { AddTodo } from './todo/components/AddTodo';
-import Footer from './todo/components/Footer';
-import TodoList from './todo/components/TodoList';
-import { Filter } from './todo/shared/filter.type';
+import { Status } from '../shared/status.type';
+import { Todo } from '../shared/todo.model';
+import { AddTodo } from '../components/AddTodo';
+import Footer from '../components/Footer';
+import TodoList from '../components/TodoList';
+import { Filter } from '../shared/filter.type';
 
 interface State {
     todos: Todo[];
