@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './todo/containers/App';
+import App from './containers/App';
 import * as serviceWorker from './serviceWorker';
 import 'todomvc-app-css/index.css';
 
 import { createStore } from 'redux';
-import reducer from './todo/reducers/todos';
+import reducer from './reducers/todos';
 import { Provider } from 'react-redux';
 
 import { composeWithDevTools } from 'redux-devtools-extension';
