@@ -1,26 +1,36 @@
-import React, { Component } from 'react';
+import React, { Component, Dispatch } from 'react';
 import { Status } from '../shared/status.type';
 import { Todo } from '../shared/todo.model';
 import { AddTodo } from '../components/AddTodo';
 import Footer from '../components/Footer';
 import TodoList from '../components/TodoList';
 import { Filter } from '../shared/filter.type';
+import { connect } from 'react-redux';
+import {
+    addTodo,
+    checkTodo,
+    toggleTodos,
+    clearCompletedTodos,
+    deleteTodo,
+    setFilter
+} from '../actions/actions';
+import { State } from '../reducers/todos';
 
-interface State {
+interface Props {
+    addTodo: Dispatch<any>;
+    checkTodo: Dispatch<any>;
+    toggleTodos: Dispatch<void>;
+    clearCompletedTodos: Dispatch<void>;
+    deleteTodo: Dispatch<any>;
+    setFilter: Dispatch<any>;
     todos: Todo[];
     filter: Todo[] | null;
     view: Filter;
 }
 
-class App extends Component<{}, State> {
-    constructor(props: {}) {
+class App extends Component<Props, {}> {
+    constructor(props: Props) {
         super(props);
-
-        this.state = {
-            todos: [],
-            filter: null,
-            view: Filter.ALL
-        };
     }
 
     componentDidMount() {
@@ -45,57 +55,9 @@ class App extends Component<{}, State> {
         return Math.floor(Math.random() * Math.floor(number));
     }
 
-    addTodo(value: string): void {
-        const newTodo = {
-            id: this.getRandomId(10000),
-            name: value,
-            status: Status.OPEN
-        };
-
-        const updatedTodos = [...this.state.todos, newTodo];
-
-        this.updateTodos(updatedTodos);
-    }
-
-    checkTodo(id: number): void {
-        const checkedTodos = [...this.state.todos].map((todo: Todo) => {
-            if (todo.id === id)
-                todo.status === Status.OPEN
-                    ? (todo.status = Status.DONE)
-                    : (todo.status = Status.OPEN);
-            return todo;
-        });
-
-        this.updateTodos(checkedTodos);
-    }
-
-    toggleAll(): void {
-        const todoStatusList = [...this.state.todos].reduce(
-            (acc: string[], curr: Todo) => {
-                acc.push(curr.status);
-                return acc;
-            },
-            []
-        );
-
-        const checkTodoStatus = todoStatusList.every((status: string) => {
-            return status === Status.DONE;
-        });
-
-        const checkedTodos = [...this.state.todos].map((todo: Todo) => {
-            checkTodoStatus
-                ? (todo.status = Status.OPEN)
-                : (todo.status = Status.DONE);
-
-            return todo;
-        });
-
-        this.updateTodos(checkedTodos);
-    }
-
     getOpenTodos(): number {
         let initialCount: number = 0;
-        const todoCountNumber: number = [...this.state.todos].reduce(
+        const todoCountNumber: number = [...this.props.todos].reduce(
             (todoCount, todo: Todo) => {
                 todo.status === Status.OPEN
                     ? (todoCount += initialCount + 1)
@@ -107,87 +69,67 @@ class App extends Component<{}, State> {
         return todoCountNumber;
     }
 
-    deleteTodo(id: number): void {
-        const todoIndex = [...this.state.todos].findIndex((todo: Todo) => {
-            return todo.id === id;
-        });
-
-        const newTodos = [...this.state.todos];
-        newTodos.splice(todoIndex, 1);
-
-        this.updateTodos(newTodos);
-    }
-
-    clearCompletedTodos(): void {
-        const openTodos = [...this.state.todos].filter((todo: Todo) => {
-            return todo.status === Status.OPEN ? todo : null;
-        });
-
-        this.updateTodos(openTodos);
-    }
-
-    updateTodos(todos: Todo[]) {
-        this.setState({
-            todos: todos
-        });
-
-        this.setTodosToLocalStorage(todos);
-    }
-
-    setFilter(filter: Filter) {
-        let filteredTodos: Todo[] | null;
-        let todos = [...this.state.todos];
-
-        switch (filter) {
-            case Filter.ACTIVE:
-                filteredTodos = todos.filter(
-                    (todo: Todo) => todo.status === Status.OPEN
-                );
-                break;
-
-            case Filter.COMPLETED:
-                filteredTodos = todos.filter(
-                    (todo: Todo) => todo.status === Status.DONE
-                );
-                break;
-
-            default:
-                filteredTodos = null;
-        }
-
-        this.setState({
-            filter: filteredTodos,
-            view: filter
-        });
-    }
-
     render() {
-        const todos = this.state.filter ? this.state.filter : this.state.todos;
+        const {
+            addTodo,
+            checkTodo,
+            toggleTodos,
+            clearCompletedTodos,
+            deleteTodo,
+            setFilter,
+            todos,
+            filter,
+            view
+        } = this.props;
+
+        const todoList = filter ? filter : todos;
 
         return (
             <section className="todoapp">
                 <header className="header">
                     <h1>todos</h1>
-                    <AddTodo addTodo={value => this.addTodo(value)} />
+                    <AddTodo addTodo={value => addTodo(value)} />
                 </header>
                 <section className="main">
                     <TodoList
-                        todos={todos}
-                        checkedTodo={id => this.checkTodo(id)}
-                        deletedTodo={id => this.deleteTodo(id)}
-                        toggleAll={() => this.toggleAll()}
+                        todos={todoList}
+                        checkedTodo={id => checkTodo(id)}
+                        deletedTodo={id => deleteTodo(id)}
+                        toggleAll={() => toggleTodos()}
                     />
                 </section>
                 <Footer
-                    todoLength={this.state.todos.length}
+                    todoLength={todos.length}
                     openTodos={this.getOpenTodos()}
-                    clearCompletedTodos={() => this.clearCompletedTodos()}
-                    filter={type => this.setFilter(type)}
-                    activeFilter={this.state.view}
+                    clearCompletedTodos={() => clearCompletedTodos()}
+                    filter={type => setFilter(type)}
+                    activeFilter={view}
                 />
             </section>
         );
     }
 }
 
-export default App;
+const mapStateToProps = (state: State) => {
+    return {
+        todos: state.todos,
+        filter: state.filteredTodos,
+        view: state.view
+    };
+};
+
+const mapDispatchToProps = (dispatch: Dispatch<any>) => {
+    return {
+        addTodo: (name: string) => dispatch(addTodo(name)),
+        checkTodo: (id: number) => dispatch(checkTodo(id)),
+        toggleTodos: () => dispatch(toggleTodos()),
+        clearCompletedTodos: () => dispatch(clearCompletedTodos()),
+        deleteTodo: (id: number) => dispatch(deleteTodo(id)),
+        setFilter: (filter: Filter) => dispatch(setFilter(filter))
+    };
+};
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(App);
